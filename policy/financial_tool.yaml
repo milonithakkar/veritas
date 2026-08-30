@@ -1,0 +1,30 @@
+# Financial Decision Support Tool Policy
+# Critical risk — regulated, high-stakes decisions
+# Accuracy > speed. Full audit. Human review mandatory.
+
+use_case: financial_tool
+display_name: "Financial Decision Support Tool"
+model_name: gemini-2.5-flash
+geography: EU
+max_latency_ms: 5000            # Speed is not the priority here
+
+fast_track:
+  pii_detection: true
+  pii_action: BLOCK
+  confidence_threshold: 0.80    # Very strict — financial claims need high confidence
+  low_confidence_action: BLOCK  # Block uncertain financial outputs
+  max_tokens_per_response: 2000
+  token_exceed_action: FLAG
+  blocklist_enabled: true
+  blocklist_action: BLOCK
+
+deep_track:
+  grounding_enabled: true
+  grounding_similarity_threshold: 0.80  # Very strict — must be grounded in financial docs
+  grounding_action: BLOCK               # Block ungrounded financial claims outright
+  bias_detection_enabled: true
+  bias_action: FLAG
+
+audit:
+  full_audit: true
+  require_human_review: true    # Every flagged or blocked response needs human review

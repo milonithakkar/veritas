@@ -1,0 +1,30 @@
+# Internal HR Knowledge Assistant Policy
+# Medium risk — internal use, but sensitive HR data
+# More lenient latency, stricter on bias
+
+use_case: hr_assistant
+display_name: "Internal HR Knowledge Assistant"
+model_name: gemini-2.5-flash
+geography: EU
+max_latency_ms: 2000
+
+fast_track:
+  pii_detection: true
+  pii_action: FLAG               # Flag but allow — HR may legitimately discuss personal data
+  confidence_threshold: 0.55
+  low_confidence_action: FLAG
+  max_tokens_per_response: 1500
+  token_exceed_action: FLAG
+  blocklist_enabled: true
+  blocklist_action: FLAG         # Flag rather than block for internal use
+
+deep_track:
+  grounding_enabled: true
+  grounding_similarity_threshold: 0.68
+  grounding_action: FLAG
+  bias_detection_enabled: true
+  bias_action: FLAG              # Strict — bias in HR is legally dangerous
+
+audit:
+  full_audit: true
+  require_human_review: true    # All flags require human sign-off in HR context

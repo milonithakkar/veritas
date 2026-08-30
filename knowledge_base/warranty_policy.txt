@@ -1,0 +1,36 @@
+ACME ELECTRONICS WARRANTY POLICY
+Version 4.2 | Effective January 2026
+
+SECTION 1: COVERAGE
+This warranty covers manufacturing defects in materials and workmanship 
+for a period of 12 months from the date of original purchase.
+
+SECTION 2: WHAT IS COVERED
+- Defects in materials arising from normal use
+- Manufacturing faults identified during the warranty period
+- Hardware component failures not caused by external damage
+
+SECTION 3: WHAT IS NOT COVERED
+- Accidental damage of any kind
+- This warranty explicitly excludes coverage for accidental damage, 
+  including but not limited to drops, liquid damage, and physical impact
+- Damage caused by misuse, neglect, or unauthorized modification
+- Cosmetic damage including scratches and dents
+- Damage caused by third-party accessories
+- Software issues or data loss
+
+SECTION 4: CLAIM PROCESS
+To file a warranty claim, customers must:
+1. Contact support within the warranty period
+2. Provide proof of purchase
+3. Ship the device to our certified repair center
+4. Allow 7-10 business days for assessment
+
+SECTION 5: LIMITATIONS
+Our liability is limited to repair or replacement of the defective product.
+We are not liable for any consequential or incidental damages.
+This warranty gives you specific legal rights which may vary by location.
+
+SECTION 6: CONTACT
+Warranty claims: warranty@acme-electronics.com
+Support hotline: 1-800-ACME-SUP (available Mon-Fri, 9AM-5PM EST)

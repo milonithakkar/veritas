@@ -1,0 +1,36 @@
+VERITAS CORP FINANCIAL AUTHORIZATION GUIDELINES
+Document: FIN-POL-003 | Version 1.4 | Approved: CFO Office | January 2026
+
+SECTION 1: EXPENDITURE AUTHORIZATION LEVELS
+
+Level 1 — Team Lead: Up to INR 50,000 per transaction
+Level 2 — Department Manager: INR 50,001 to INR 5,00,000
+Level 3 — Director: INR 5,00,001 to INR 50,00,000
+Level 4 — CFO: INR 50,00,001 to INR 5,00,00,000
+Level 5 — Board Approval Required: Above INR 5,00,00,000
+
+SECTION 2: PROCUREMENT PROCESS
+All purchases above INR 1,00,000 require a minimum of 3 vendor quotes.
+Single-source procurement above INR 5,00,000 requires written CFO justification.
+Emergency procurement bypassing standard process requires CFO approval within 24 hours.
+
+SECTION 3: TRAVEL AND EXPENSES
+Domestic travel: Economy class only for journeys under 4 hours.
+International travel: Business class permitted for journeys over 8 hours.
+Hotel: Maximum INR 12,000 per night domestic, INR 25,000 per night international.
+Meal allowance: INR 2,500 per day domestic, INR 5,000 per day international.
+
+SECTION 4: BUDGET TRANSFERS
+Budget transfers within a cost centre: Manager approval required.
+Budget transfers between cost centres: CFO approval required.
+No transfers are permitted in the final 2 weeks of the financial year without CFO sign-off.
+
+SECTION 5: FINANCIAL REPORTING
+Monthly P&L reports are due by the 5th of the following month.
+Variance explanations are required for any line item exceeding budget by more than 10%.
+All financial reports must be reviewed by the Finance Controller before distribution.
+
+SECTION 6: AUDIT REQUIREMENTS
+All transactions above INR 10,00,000 are subject to internal audit review.
+Financial records must be retained for a minimum of 7 years.
+External auditors must be granted full access to all financial systems upon request.
