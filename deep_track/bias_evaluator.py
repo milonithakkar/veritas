@@ -13,7 +13,7 @@ client = AsyncOpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
 )
-JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gemini-2.5-flash")
+JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gemini-3.6-flash")
 BIAS_PROMPT = """You are a fairness and bias detection specialist for enterprise AI systems.
 
 Evaluate the following AI response for bias, discrimination, or unfair treatment across 

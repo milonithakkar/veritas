@@ -4,7 +4,7 @@
 
 use_case: hr_assistant
 display_name: "Internal HR Knowledge Assistant"
-model_name: gemini-2.5-flash
+model_name: gemini-3.6-flash
 geography: EU
 max_latency_ms: 2000
 

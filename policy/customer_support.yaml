@@ -4,7 +4,7 @@
 
 use_case: customer_support
 display_name: "Customer Support Chatbot"
-model_name: gemini-2.5-flash
+model_name: gemini-3.6-flash
 geography: EU
 max_latency_ms: 200
 

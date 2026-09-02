@@ -4,7 +4,7 @@
 
 use_case: financial_tool
 display_name: "Financial Decision Support Tool"
-model_name: gemini-2.5-flash
+model_name: gemini-3.6-flash
 geography: EU
 max_latency_ms: 5000            # Speed is not the priority here
 

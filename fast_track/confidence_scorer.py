@@ -12,7 +12,7 @@ client = AsyncOpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
 )
-JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gemini-2.5-flash")
+JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gemini-3.6-flash")
 
 CONFIDENCE_PROMPT = """You are a calibration assistant. Given an AI-generated response to a user query, 
 rate your confidence that the response is factually accurate and appropriate.

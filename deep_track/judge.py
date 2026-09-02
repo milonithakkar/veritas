@@ -15,7 +15,7 @@ client = AsyncOpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
 )
-JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gemini-2.5-flash")
+JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gemini-3.6-flash")
 JUDGE_PROMPT = """You are a factual accuracy judge for an enterprise AI oversight system.
 
 Your job is to determine whether an AI-generated response is grounded in, contradicts, or 
