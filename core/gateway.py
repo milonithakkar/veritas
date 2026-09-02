@@ -13,10 +13,12 @@ Usage:
 
 import os
 import sys
+import traceback
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import time
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
 from openai import AsyncOpenAI
@@ -42,6 +44,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Global exception handler — return JSON errors instead of HTML 500 pages
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"{type(exc).__name__}: {str(exc)}"},
+    )
 
 client = AsyncOpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
@@ -92,66 +104,75 @@ async def chat(request: ChatRequest):
     then runs Veritas evaluation on the response before returning it.
     This is the main integration point for enterprise AI applications.
     """
-    # Load policy for this use case
-    policy = load_policy(request.use_case)
+    try:
+        # Load policy for this use case
+        policy = load_policy(request.use_case)
 
-    # Call the foundation model
-    messages = []
-    if request.system_prompt:
-        messages.append({"role": "system", "content": request.system_prompt})
-    messages.append({"role": "user", "content": request.user_input})
+        # Call the foundation model
+        messages = []
+        if request.system_prompt:
+            messages.append({"role": "system", "content": request.system_prompt})
+        messages.append({"role": "user", "content": request.user_input})
 
-    llm_response = await client.chat.completions.create(
-        model=policy.model_name,
-        messages=messages,
-        temperature=0.7,
-        max_tokens=policy.max_tokens_per_response,
-    )
+        llm_response = await client.chat.completions.create(
+            model=policy.model_name,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=policy.max_tokens_per_response,
+        )
 
-    ai_response = llm_response.choices[0].message.content
-    input_tokens = llm_response.usage.prompt_tokens
-    output_tokens = llm_response.usage.completion_tokens
+        ai_response = llm_response.choices[0].message.content
+        input_tokens = llm_response.usage.prompt_tokens
+        output_tokens = llm_response.usage.completion_tokens
 
-    # Run Veritas evaluation
-    evaluation = await evaluate_response(
-        user_input=request.user_input,
-        ai_response=ai_response,
-        use_case=request.use_case,
-        policy=policy,
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-    )
+        # Run Veritas evaluation
+        evaluation = await evaluate_response(
+            user_input=request.user_input,
+            ai_response=ai_response,
+            use_case=request.use_case,
+            policy=policy,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
 
-    verdict = evaluation["verdict"]
+        verdict = evaluation["verdict"]
 
-    # Return appropriate response based on verdict
-    if verdict == "BLOCK":
-        return {
-            "verdict": "BLOCK",
-            "response": None,
-            "message": "Response blocked by Veritas. A human reviewer has been notified.",
-            "event_id": evaluation["event_id"],
-            "flags": evaluation["reasoning_trail"].get("flags", []),
-            "latency_ms": evaluation["latency_ms"],
-        }
-    elif verdict == "FLAG":
-        return {
-            "verdict": "FLAG",
-            "response": ai_response,  # Deliver but flag
-            "message": "Response flagged for human review.",
-            "event_id": evaluation["event_id"],
-            "flags": evaluation["reasoning_trail"].get("flags", []),
-            "latency_ms": evaluation["latency_ms"],
-        }
-    else:
-        return {
-            "verdict": "PASS",
-            "response": ai_response,
-            "message": "Response passed all Veritas checks.",
-            "event_id": evaluation["event_id"],
-            "flags": [],
-            "latency_ms": evaluation["latency_ms"],
-        }
+        # Return appropriate response based on verdict
+        if verdict == "BLOCK":
+            return {
+                "verdict": "BLOCK",
+                "response": None,
+                "message": "Response blocked by Veritas. A human reviewer has been notified.",
+                "event_id": evaluation["event_id"],
+                "flags": evaluation["reasoning_trail"].get("flags", []),
+                "latency_ms": evaluation["latency_ms"],
+            }
+        elif verdict == "FLAG":
+            return {
+                "verdict": "FLAG",
+                "response": ai_response,  # Deliver but flag
+                "message": "Response flagged for human review.",
+                "event_id": evaluation["event_id"],
+                "flags": evaluation["reasoning_trail"].get("flags", []),
+                "latency_ms": evaluation["latency_ms"],
+            }
+        else:
+            return {
+                "verdict": "PASS",
+                "response": ai_response,
+                "message": "Response passed all Veritas checks.",
+                "event_id": evaluation["event_id"],
+                "flags": [],
+                "latency_ms": evaluation["latency_ms"],
+            }
+
+    except Exception as e:
+        error_detail = str(e)
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Chat pipeline error: {error_detail}"
+        )
 
 
 @app.post("/evaluate")

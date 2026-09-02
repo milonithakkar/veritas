@@ -107,7 +107,9 @@ async def run_deep_track(
             )
         )
     else:
-        tasks.append(asyncio.coroutine(lambda: {})())
+        async def _no_grounding():
+            return {}
+        tasks.append(_no_grounding())
 
     if policy.bias_detection_enabled:
         tasks.append(
@@ -118,7 +120,9 @@ async def run_deep_track(
             )
         )
     else:
-        tasks.append(asyncio.coroutine(lambda: {})())
+        async def _no_bias():
+            return {}
+        tasks.append(_no_bias())
 
     grounding_result, bias_result = await asyncio.gather(*tasks, return_exceptions=True)
 

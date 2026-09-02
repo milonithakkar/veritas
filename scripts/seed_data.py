@@ -148,7 +148,13 @@ def seed():
                 print(f"  {label} {icon} {verdict:5s} | {latency:7.0f}ms | {use_case:20s} | {query}")
             else:
                 results["ERROR"] += 1
-                print(f"  {label} ✗ HTTP {r.status_code} | {use_case:20s} | {query}")
+                # Try to get error details from response body
+                try:
+                    err_body = r.json()
+                    err_detail = err_body.get("detail", r.text[:100])
+                except Exception:
+                    err_detail = r.text[:100] if r.text else "No details"
+                print(f"  {label} ✗ HTTP {r.status_code} | {use_case:20s} | {err_detail}")
 
         except requests.Timeout:
             results["ERROR"] += 1
