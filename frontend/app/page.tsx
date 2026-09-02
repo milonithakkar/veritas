@@ -7,7 +7,6 @@ import {
   BarChart3,
   Check,
   ChevronRight,
-  Clock3,
   DollarSign,
   FileCheck2,
   Menu,
@@ -18,19 +17,22 @@ import {
   ShieldCheck,
   Sparkles,
   TrendingUp,
-  X,
 } from 'lucide-react'
 import { useApi } from '@/lib/useApi'
 import {
   fetchStats,
   fetchFlags,
   fetchPolicies,
+  fetchModelHealth,
+  fetchCostAnalytics,
   sendChat,
   submitReview,
   type Stats,
   type Flag,
   type Policy,
   type ChatResponse,
+  type ModelHealthEntry,
+  type CostAnalytics,
 } from '@/lib/api'
 
 type View = 'Dashboard' | 'Response Monitor' | 'Playground' | 'Model Health' | 'Cost Analytics' | 'Audit Trail'
@@ -528,18 +530,268 @@ function Playground() {
   )
 }
 
-// --- Model Health (static — no backend endpoint yet) ---
+// --- Model Health (live data) ---
 
-function LineChart({ cost = false }: { cost?: boolean }) {
-  const points = cost ? '5,90 70,63 135,76 200,42 265,28 330,69 395,91' : '5,28 40,28 75,30 110,32 145,43 180,52 215,61 250,68 285,75 320,82 355,88 395,92'
-  return <div className="chart-wrap"><svg viewBox="0 0 400 150" role="img" aria-label={cost ? 'Daily spend versus budget line chart' : 'Accuracy over time line chart'} preserveAspectRatio="none"><line x1="0" y1={cost ? 72 : 64} x2="400" y2={cost ? 72 : 64} className="threshold" /><path d={`M ${points} L 395,145 L 5,145 Z`} className="chart-fill" /><polyline points={points} className={cost ? 'line purple-line' : 'line health-line'} /><polyline points={cost ? '' : '145,43 180,52 215,61 250,68 285,75 320,82 355,88 395,92'} className="line red-line" /></svg><div className="chart-axis"><span>{cost ? 'Mon' : 'Week 1'}</span><span>{cost ? 'Thu' : 'Week 6'}</span><span>{cost ? 'Sun' : 'Week 12'}</span></div></div>
+function MiniSparkline({ data, tone }: { data: number[]; tone: string }) {
+  if (!data || data.length === 0) return null
+  const w = 80, h = 24
+  const step = w / Math.max(data.length - 1, 1)
+  const points = data.map((v, i) => `${i * step},${h - v * h}`).join(' ')
+  const color = tone === 'safe' ? '#43c98b' : tone === 'warning' ? '#e7a33e' : '#ef5360'
+  return (
+    <svg width={w} height={h} style={{ overflow: 'visible' }}>
+      <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  )
 }
 
-function VolumeChart() { return <div className="chart-wrap"><div className="bars">{[1800, 2100, 1950, 2200, 1600, 800, 600].map((height, i) => <div className="bar-col" key={i}><i style={{ height: `${height / 24}%` }} className={i > 4 ? 'weekend' : ''} /><span>{['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}</span></div>)}</div></div> }
+function ModelHealth() {
+  const health = useApi(fetchModelHealth)
 
-function ModelHealth() { return <><header className="page-header"><div><p className="eyebrow">Model Health / Performance diagnostics</p><h1>loan-risk-model-v2 <Badge tone="critical">DRIFT ALERT</Badge></h1><p className="subtext">Monitoring accuracy, response volume, and distribution shifts.</p></div></header><div className="charts-grid"><section className="panel chart-panel"><SectionTitle>Accuracy Over Time <span className="title-meta">Minimum threshold: 80%</span></SectionTitle><LineChart /></section><section className="panel chart-panel"><SectionTitle>Daily Response Volume <span className="title-meta">Last 7 days</span></SectionTitle><VolumeChart /></section></div><section className="panel drift-summary"><SectionTitle>Drift Summary</SectionTitle><div className="summary-grid"><div><span>Drift detected</span><strong className="warning-text">August 1, 2026</strong></div><div><span>Root cause</span><strong>Input data distribution shift in pricing feature</strong></div><div><span>Impact</span><strong className="critical-text">23% increase in false-negative risk assessments</strong></div><div><span>Recommendation</span><strong className="safe-text">Retrain with updated pricing data</strong></div></div></section><div className="button-row"><button className="action primary-action">Schedule Retrain</button><button className="action outline-action">Apply Calibration</button><button className="action neutral-action">Acknowledge &amp; Monitor</button></div></> }
+  if (health.loading) return <LoadingSpinner />
 
-function CostAnalytics() { const rows = [['customer-chatbot-v3', '42,841', '1,247', '$2,103', '+8%', 'warning'], ['loan-risk-model-v2', '18,293', '834', '$1,412', '+41% ⚠', 'critical'], ['sales-forecast-q3', '8,471', '2,103', '$892', '-3%', 'safe'], ['hr-screening-v1', '5,129', '612', '$440', '-12%', 'safe']] as const; return <><header className="page-header cost-header"><div><p className="eyebrow">Cost Analytics / August 10–16, 2026</p><h1>AI Spend This Week</h1><p className="spend-number">$4,847 <span>Budget: $4,000</span> <Badge tone="critical">21% Over Budget</Badge></p></div></header><section className="panel chart-panel spend-chart"><SectionTitle>Daily Spend vs Budget <span className="title-meta">Daily budget: $571</span></SectionTitle><LineChart cost /></section><section className="panel cost-table-panel"><SectionTitle>Cost by Model</SectionTitle><div className="table-scroll"><table><thead><tr><th>Model</th><th>Requests</th><th>Avg Tokens</th><th>Total Cost</th><th>vs Budget</th></tr></thead><tbody>{rows.map(([model, requests, tokens, total, delta, tone]) => <tr className={tone === 'critical' ? 'highlight-row' : ''} key={model}><td><strong>{model}</strong></td><td>{requests}</td><td>{tokens}</td><td>{total}</td><td><Badge tone={tone}>{delta}</Badge></td></tr>)}</tbody></table></div></section><div className="alert-card"><AlertTriangle size={18} /><p><strong>loan-risk-model-v2 is 41% over budget.</strong> Primary driver: redundant retrieval calls averaging 3.2 per request vs 1.0 expected.</p></div></> }
+  return (
+    <>
+      <header className="page-header">
+        <div>
+          <p className="eyebrow">Model Health / Performance diagnostics</p>
+          <h1>Model Health <Badge tone="neutral">GET /model-health</Badge></h1>
+          <p className="subtext">Per-use-case accuracy, latency, and drift monitoring from real evaluation data.</p>
+        </div>
+        <button className="icon-button" onClick={() => health.refresh()} aria-label="Refresh">
+          <Search size={18} />
+        </button>
+      </header>
+
+      {health.error && <ErrorBanner message={health.error} onRetry={health.refresh} />}
+
+      {health.data && health.data.models.length > 0 ? (
+        <>
+          {/* Model cards grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16, marginBottom: 16 }}>
+            {health.data.models.map((model) => (
+              <section className="panel" key={model.use_case}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div>
+                    <strong style={{ fontSize: 14 }}>{model.use_case.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</strong>
+                    <p style={{ color: '#8e7c9c', fontSize: 10, margin: '3px 0 0' }}>{model.model_name}</p>
+                  </div>
+                  <Badge tone={model.tone}>{model.drift} Drift</Badge>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                  <span style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.04em', color: model.pass_rate >= 90 ? '#43c98b' : model.pass_rate >= 75 ? '#e7a33e' : '#ef5360' }}>
+                    {model.pass_rate}%
+                  </span>
+                  <MiniSparkline data={model.sparkline} tone={model.tone} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, fontSize: 11 }}>
+                  <div style={{ borderLeft: '2px solid #3a2a4b', paddingLeft: 10 }}>
+                    <span style={{ color: '#83768d', fontSize: 9 }}>Requests</span>
+                    <strong style={{ display: 'block', marginTop: 2 }}>{model.total_requests}</strong>
+                  </div>
+                  <div style={{ borderLeft: '2px solid #3a2a4b', paddingLeft: 10 }}>
+                    <span style={{ color: '#83768d', fontSize: 9 }}>Avg Latency</span>
+                    <strong style={{ display: 'block', marginTop: 2 }}>{model.avg_latency_ms.toFixed(0)}ms</strong>
+                  </div>
+                  <div style={{ borderLeft: '2px solid #3a2a4b', paddingLeft: 10 }}>
+                    <span style={{ color: '#83768d', fontSize: 9 }}>Confidence</span>
+                    <strong style={{ display: 'block', marginTop: 2 }}>{model.avg_confidence != null ? `${(model.avg_confidence * 100).toFixed(0)}%` : '—'}</strong>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+                  <Badge tone="safe">{model.passed} passed</Badge>
+                  <Badge tone="warning">{model.flagged} flagged</Badge>
+                  <Badge tone="critical">{model.blocked} blocked</Badge>
+                  {model.pending_review > 0 && <Badge tone="pending">{model.pending_review} pending</Badge>}
+                </div>
+
+                {Object.keys(model.flag_types).length > 0 && (
+                  <div style={{ marginTop: 12, borderTop: '1px solid #2a1c3c', paddingTop: 10 }}>
+                    <span style={{ color: '#83768d', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.08em' }}>Flag breakdown</span>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                      {Object.entries(model.flag_types).map(([type, count]) => (
+                        <Badge key={type} tone="neutral">{type}: {count}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            ))}
+          </div>
+
+          {/* Summary table */}
+          <section className="panel">
+            <SectionTitle>Health Summary <span className="title-meta">{health.data.models.length} use cases monitored</span></SectionTitle>
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Use Case</th>
+                    <th>Model</th>
+                    <th>Pass Rate</th>
+                    <th>Requests</th>
+                    <th>Avg Latency</th>
+                    <th>Drift</th>
+                    <th>Trend</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {health.data.models.map((model) => (
+                    <tr key={model.use_case}>
+                      <td><strong>{model.use_case.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</strong></td>
+                      <td>{model.model_name}</td>
+                      <td style={{ color: model.pass_rate >= 90 ? '#43c98b' : model.pass_rate >= 75 ? '#e7a33e' : '#ef5360' }}>
+                        <strong>{model.pass_rate}%</strong>
+                      </td>
+                      <td>{model.total_requests}</td>
+                      <td>{model.avg_latency_ms.toFixed(0)}ms</td>
+                      <td><Badge tone={model.tone}>{model.drift}</Badge></td>
+                      <td><MiniSparkline data={model.sparkline} tone={model.tone} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      ) : health.data ? (
+        <div className="empty-state">
+          <Activity size={34} />
+          <strong>No model health data yet</strong>
+          <span>Send prompts through the Playground to generate evaluation data.</span>
+        </div>
+      ) : null}
+    </>
+  )
+}
+
+function CostAnalytics() {
+  const cost = useApi<CostAnalytics>(fetchCostAnalytics)
+
+  if (cost.loading) return <LoadingSpinner />
+
+  return (
+    <>
+      <header className="page-header cost-header">
+        <div>
+          <p className="eyebrow">Cost Analytics / Live data</p>
+          <h1>AI Spend Overview <Badge tone="neutral">GET /cost-analytics</Badge></h1>
+          {cost.data && (
+            <p className="spend-number">
+              ${cost.data.estimated_total_cost.toFixed(2)}
+              <span>{cost.data.total_tokens.toLocaleString()} tokens used across {cost.data.total_requests} requests</span>
+            </p>
+          )}
+        </div>
+        <button className="icon-button" onClick={() => cost.refresh()} aria-label="Refresh">
+          <Search size={18} />
+        </button>
+      </header>
+
+      {cost.error && <ErrorBanner message={cost.error} onRetry={cost.refresh} />}
+
+      {cost.data && cost.data.by_use_case.length > 0 ? (
+        <>
+          {/* Daily token trend chart */}
+          <section className="panel chart-panel spend-chart">
+            <SectionTitle>Daily Token Usage <span className="title-meta">Last 7 days</span></SectionTitle>
+            <TokenBarChart data={cost.data.daily_token_trend} />
+          </section>
+
+          {/* Stats cards */}
+          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <StatCard label="Total Requests" value={String(cost.data.total_requests)} tone="purple" icon={TrendingUp} />
+            <StatCard label="Total Tokens" value={cost.data.total_tokens.toLocaleString()} tone="amber" icon={BarChart3} />
+            <StatCard label="Avg Tokens/Request" value={String(cost.data.avg_tokens_per_request)} tone="green" icon={Activity} />
+          </div>
+
+          {/* Cost by use case table */}
+          <section className="panel cost-table-panel" style={{ marginTop: 16 }}>
+            <SectionTitle>Cost by Use Case</SectionTitle>
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Use Case</th>
+                    <th>Requests</th>
+                    <th>Avg Tokens</th>
+                    <th>Total Tokens</th>
+                    <th>Est. Cost</th>
+                    <th>7-Day Trend</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cost.data.by_use_case.map((item) => (
+                    <tr key={item.use_case}>
+                      <td><strong>{item.use_case.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</strong></td>
+                      <td>{item.requests}</td>
+                      <td>{item.avg_tokens}</td>
+                      <td>{item.total_tokens.toLocaleString()}</td>
+                      <td><strong>${item.estimated_cost.toFixed(2)}</strong></td>
+                      <td><MiniTokenBars data={item.daily_tokens} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      ) : cost.data ? (
+        <div className="empty-state">
+          <DollarSign size={34} />
+          <strong>No cost data yet</strong>
+          <span>Send prompts through the Playground to generate token usage data.</span>
+        </div>
+      ) : null}
+    </>
+  )
+}
+
+function TokenBarChart({ data }: { data: number[] }) {
+  const max = Math.max(...data, 1)
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const today = new Date().getDay() // 0=Sun
+  const labels = data.map((_, i) => {
+    const dayIndex = (today - (data.length - 1 - i) + 7) % 7
+    return days[dayIndex === 0 ? 6 : dayIndex - 1]
+  })
+
+  return (
+    <div className="chart-wrap">
+      <div className="bars">
+        {data.map((val, i) => (
+          <div className="bar-col" key={i}>
+            <i style={{ height: `${Math.max((val / max) * 100, 2)}%` }} className={i >= data.length - 2 ? 'weekend' : ''} />
+            <span>{labels[i]}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MiniTokenBars({ data }: { data: number[] }) {
+  const max = Math.max(...data, 1)
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 20 }}>
+      {data.map((val, i) => (
+        <div
+          key={i}
+          style={{
+            width: 6,
+            height: `${Math.max((val / max) * 100, 5)}%`,
+            background: i >= data.length - 2 ? '#67536f' : '#8b1fa9',
+            borderRadius: '2px 2px 0 0',
+            minHeight: 2,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
 
 // --- Audit Trail (live data) ---
 

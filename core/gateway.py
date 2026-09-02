@@ -25,7 +25,7 @@ from rich import print
 
 from policy.policy_engine import load_policy, list_policies
 from core.interceptor import evaluate_response
-from core.audit import get_recent_flags, get_stats, update_reviewer_action
+from core.audit import get_recent_flags, get_stats, update_reviewer_action, get_model_health, get_cost_analytics
 
 load_dotenv()
 
@@ -225,6 +225,18 @@ async def get_policies():
             "require_human_review": p.require_human_review,
         })
     return {"policies": policies}
+
+
+@app.get("/model-health")
+async def model_health():
+    """Get per-use-case model health metrics from the audit log."""
+    return get_model_health()
+
+
+@app.get("/cost-analytics")
+async def cost_analytics():
+    """Get aggregated cost and token analytics from the audit log."""
+    return get_cost_analytics()
 
 
 if __name__ == "__main__":

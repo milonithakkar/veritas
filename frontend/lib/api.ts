@@ -129,3 +129,50 @@ export async function checkHealth(): Promise<{
     available_use_cases: [],
   }))
 }
+
+// --- Model Health ---
+
+export interface ModelHealthEntry {
+  use_case: string
+  model_name: string
+  total_requests: number
+  passed: number
+  flagged: number
+  blocked: number
+  pass_rate: number
+  avg_latency_ms: number
+  avg_confidence: number | null
+  drift: string
+  tone: string
+  sparkline: number[]
+  flag_types: Record<string, number>
+  pending_review: number
+}
+
+export async function fetchModelHealth(): Promise<{ models: ModelHealthEntry[] }> {
+  return get<{ models: ModelHealthEntry[] }>('/model-health')
+}
+
+// --- Cost Analytics ---
+
+export interface CostBreakdown {
+  use_case: string
+  requests: number
+  total_tokens: number
+  avg_tokens: number
+  estimated_cost: number
+  daily_tokens: number[]
+}
+
+export interface CostAnalytics {
+  total_requests: number
+  total_tokens: number
+  avg_tokens_per_request: number
+  estimated_total_cost: number
+  daily_token_trend: number[]
+  by_use_case: CostBreakdown[]
+}
+
+export async function fetchCostAnalytics(): Promise<CostAnalytics> {
+  return get<CostAnalytics>('/cost-analytics')
+}
