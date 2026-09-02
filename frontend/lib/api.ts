@@ -1,11 +1,22 @@
 /**
  * Veritas API Client
  *
- * Connects the frontend to the FastAPI backend via the Next.js rewrite proxy.
- * All calls go to /api/* which is proxied to the backend (default: localhost:8000).
+ * Connects the frontend to the FastAPI backend.
+ *
+ * In development: calls the backend directly (http://localhost:8000)
+ *   → set NEXT_PUBLIC_BACKEND_URL to override
+ *
+ * In production: calls through the Next.js /api/* proxy
+ *   → set NEXT_PUBLIC_API_BASE to override
  */
 
-const API_BASE = '/api'
+// Direct backend URL (used in development, bypasses Next.js proxy)
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
+
+// Use direct URL in dev, proxy in production
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || BACKEND_URL
 
 // --- Types matching the backend Pydantic models ---
 
@@ -114,6 +125,14 @@ export async function submitReview(request: ReviewRequest): Promise<ReviewRespon
   return post<ReviewResponse>('/review', request)
 }
 
+export async function fetchModelHealth(): Promise<{ models: ModelHealthEntry[] }> {
+  return get<{ models: ModelHealthEntry[] }>('/model-health')
+}
+
+export async function fetchCostAnalytics(): Promise<CostAnalytics> {
+  return get<CostAnalytics>('/cost-analytics')
+}
+
 export async function checkHealth(): Promise<{
   service: string
   tagline: string
@@ -149,10 +168,6 @@ export interface ModelHealthEntry {
   pending_review: number
 }
 
-export async function fetchModelHealth(): Promise<{ models: ModelHealthEntry[] }> {
-  return get<{ models: ModelHealthEntry[] }>('/model-health')
-}
-
 // --- Cost Analytics ---
 
 export interface CostBreakdown {
@@ -171,8 +186,4 @@ export interface CostAnalytics {
   estimated_total_cost: number
   daily_token_trend: number[]
   by_use_case: CostBreakdown[]
-}
-
-export async function fetchCostAnalytics(): Promise<CostAnalytics> {
-  return get<CostAnalytics>('/cost-analytics')
 }
