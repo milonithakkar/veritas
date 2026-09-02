@@ -43,10 +43,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = AsyncOpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
-)
+# Choose provider by environment variables:
+# - If GOOGLE_API_KEY is set, use that with the Google generative base URL.
+# - Otherwise fall back to OPENAI_API_KEY and the OpenAI defaults.
+if os.getenv("GOOGLE_API_KEY"):
+    client = AsyncOpenAI(
+        api_key=os.getenv("GOOGLE_API_KEY"),
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+    )
+else:
+    client = AsyncOpenAI(
+        api_key=os.getenv("OPENAI_API_KEY")
+    )
 PRIMARY_MODEL = os.getenv("PRIMARY_MODEL", "gpt-4o-mini")
 
 
