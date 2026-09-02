@@ -39,3 +39,16 @@ export async function getPolicies() {
   if (!res.ok) throw new Error(`getPolicies failed: ${res.status}`);
   return safeJson(res);
 }
+
+export async function postReview(event_id: string, action: string, edited_response?: string | null) {
+  const res = await fetch(`${BASE}/review`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event_id, action, edited_response: edited_response ?? null }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`postReview failed: ${res.status} ${text}`);
+  }
+  return safeJson(res);
+}
