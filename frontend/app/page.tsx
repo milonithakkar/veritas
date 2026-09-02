@@ -797,6 +797,7 @@ function MiniTokenBars({ data }: { data: number[] }) {
 
 function AuditTrail() {
   const flags = useApi(fetchFlags)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   return (
     <>
@@ -804,7 +805,7 @@ function AuditTrail() {
         <div>
           <p className="eyebrow">Audit Trail</p>
           <h1>Audit Trail <Badge tone="neutral">GET /flags</Badge></h1>
-          <p className="subtext">Every flagged and blocked event logged by the Veritas evaluation pipeline.</p>
+          <p className="subtext">Every flagged and blocked event with full reasoning trail.</p>
         </div>
         <button className="icon-button" onClick={() => flags.refresh()} aria-label="Refresh">
           <Search size={18} />
@@ -828,19 +829,80 @@ function AuditTrail() {
                   <th>Risk</th>
                   <th>Flag Type</th>
                   <th>Reviewer</th>
+                  <th>Details</th>
                 </tr>
               </thead>
               <tbody>
                 {flags.data.flags.map((flag) => (
-                  <tr key={flag.id}>
-                    <td><strong>{flag.id.slice(0, 8)}…</strong></td>
-                    <td>{timeAgo(flag.timestamp)}</td>
-                    <td>{flag.use_case}</td>
-                    <td><Badge tone={verdictTone(flag.verdict)}>{flag.verdict}</Badge></td>
-                    <td>{flag.risk_dimension || '—'}</td>
-                    <td>{flag.flag_type || '—'}</td>
-                    <td>{flag.reviewer_action ? <Badge tone="safe">{flag.reviewer_action}</Badge> : <Badge tone="pending">Pending</Badge>}</td>
-                  </tr>
+                  <>
+                    <tr key={flag.id}>
+                      <td><strong>{flag.id.slice(0, 8)}…</strong></td>
+                      <td>{timeAgo(flag.timestamp)}</td>
+                      <td>{flag.use_case}</td>
+                      <td><Badge tone={verdictTone(flag.verdict)}>{flag.verdict}</Badge></td>
+                      <td>{flag.risk_dimension || '—'}</td>
+                      <td>{flag.flag_type || '—'}</td>
+                      <td>{flag.reviewer_action ? <Badge tone="safe">{flag.reviewer_action}</Badge> : <Badge tone="pending">Pending</Badge>}</td>
+                      <td>
+                        <button
+                          onClick={() => setExpandedId(expandedId === flag.id ? null : flag.id)}
+                          style={{ background: 'none', border: '1px solid #3a2a4b', borderRadius: 4, padding: '4px 12px', color: '#b94bd2', fontSize: 10, cursor: 'pointer' }}
+                        >
+                          {expandedId === flag.id ? 'Hide' : 'View'}
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedId === flag.id && (
+                      <tr key={`${flag.id}-details`}>
+                        <td colSpan={8} style={{ background: '#1a0f2e', padding: 20 }}>
+                          <div style={{ display: 'grid', gap: 16 }}>
+                            {flag.reasoning && typeof flag.reasoning === 'object' && (
+                              <>
+                                <div>
+                                  <span style={{ color: '#83768d', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em' }}>User Input</span>
+                                  <p style={{ margin: '6px 0 0', color: '#f5f0fa', fontSize: 12, lineHeight: 1.5 }}>
+                                    {(flag.reasoning as Record<string, unknown>).user_input_preview as string || '—'}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span style={{ color: '#83768d', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em' }}>AI Response</span>
+                                  <p style={{ margin: '6px 0 0', color: '#f5f0fa', fontSize: 12, lineHeight: 1.5 }}>
+                                    {(flag.reasoning as Record<string, unknown>).response_preview as string || '—'}
+                                  </p>
+                                </div>
+                                {(flag.reasoning as Record<string, unknown>).steps && (
+                                  <div>
+                                    <span style={{ color: '#83768d', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em' }}>Reasoning Steps</span>
+                                    <div style={{ marginTop: 8 }}>
+                                      {((flag.reasoning as Record<string, unknown>).steps as Array<Record<string, unknown>>).map((step, i) => (
+                                        <div key={i} style={{ padding: '8px 0', borderBottom: i < ((flag.reasoning as Record<string, unknown>).steps as Array<Record<string, unknown>>).length - 1 ? '1px solid #2a1c3c' : 'none' }}>
+                                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                                            <Badge tone={step.status === 'PASSED' ? 'safe' : step.status === 'FLAGGED' ? 'warning' : 'critical'}>
+                                              {step.track} · Step {step.step as number}
+                                            </Badge>
+                                            <strong style={{ fontSize: 11 }}>{step.check as string}</strong>
+                                          </div>
+                                          <p style={{ margin: 0, color: '#a99cae', fontSize: 11, paddingLeft: 8 }}>
+                                            {step.result as string}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {flag.source_reference && (
+                                  <div>
+                                    <span style={{ color: '#83768d', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em' }}>Source Reference</span>
+                                    <p style={{ margin: '6px 0 0', color: '#b94bd2', fontSize: 11 }}>{flag.source_reference}</p>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
