@@ -45,6 +45,14 @@ def detect_pii(text: str, language: str = "en") -> dict:
             "highest_score": float
         }
     """
+    if not text:
+        return {
+            "pii_detected": False,
+            "entities_found": [],
+            "anonymized_text": text or "",
+            "highest_score": 0.0,
+        }
+
     results = analyzer.analyze(
         text=text,
         entities=PII_ENTITIES,

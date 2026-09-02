@@ -38,7 +38,7 @@ def check_blocklist(text: str) -> dict:
             "matched_text": str or None
         }
     """
-    text_lower = text.lower()
+    text_lower = text.lower() if text else ""
 
     for pattern, pattern_type in BLOCKLIST_PATTERNS:
         match = re.search(pattern, text_lower, re.IGNORECASE)

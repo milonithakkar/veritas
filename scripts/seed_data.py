@@ -124,6 +124,23 @@ def seed():
     """Send all seed prompts through the /chat endpoint."""
     print(f"\n🌱 Seeding Veritas with {len(SEED_PROMPTS)} prompts...\n")
 
+    # Warmup: send a lightweight request to trigger model downloads
+    print("  ⏳ Warming up backend (downloading models on first run, may take 1-2 min)...")
+    try:
+        r = requests.post(
+            f"{API_BASE}/chat",
+            json={"use_case": "customer_support", "user_input": "Hi"},
+            timeout=300,
+        )
+        if r.status_code == 200:
+            print("  ✓ Backend warmed up successfully!\n")
+        else:
+            print(f"  ⚠ Warmup returned {r.status_code}, continuing anyway...\n")
+    except requests.Timeout:
+        print("  ⚠ Warmup timed out (5 min), models may still be downloading...\n")
+    except Exception as e:
+        print(f"  ⚠ Warmup error: {e}, continuing anyway...\n")
+
     results = {"PASS": 0, "FLAG": 0, "BLOCK": 0, "ERROR": 0}
 
     for i, prompt in enumerate(SEED_PROMPTS, 1):
@@ -135,7 +152,7 @@ def seed():
             r = requests.post(
                 f"{API_BASE}/chat",
                 json=prompt,
-                timeout=120,
+                timeout=300,
             )
 
             if r.status_code == 200:
